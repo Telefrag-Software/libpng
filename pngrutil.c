@@ -18,6 +18,27 @@
 
 #ifdef PNG_READ_SUPPORTED
 
+#ifndef PNG_USE_ZLIB_INFLATE_VALIDATE
+   /* Check if zlib's inflateValidate can be used. */
+#  if ZLIB_VERNUM >= 0x1290 && \
+     defined(PNG_SET_OPTION_SUPPORTED) && defined(PNG_IGNORE_ADLER32)
+      /* Determine at compile-time whether inflateValidate is available by
+       * minimal supported OS version.
+       */
+#     if defined(MAC_OS_X_VERSION_MIN_REQUIRED) && \
+        MAC_OS_X_VERSION_MIN_REQUIRED < 101300
+         /* Don't use if targeting pre-macOS 10.13. */
+#        define PNG_USE_ZLIB_INFLATE_VALIDATE 0
+#     endif
+#  else
+#     define PNG_USE_ZLIB_INFLATE_VALIDATE 0
+#  endif /* ZLIB_VERNUM && PNG_SET_OPTION_SUPPORTED && PNG_IGNORE_ADLER32 */
+
+#  ifndef PNG_USE_ZLIB_INFLATE_VALIDATE
+#     define PNG_USE_ZLIB_INFLATE_VALIDATE 1
+#  endif
+#endif /* PNG_USE_ZLIB_INFLATE_VALIDATE */
+
 png_uint_32 PNGAPI
 png_get_uint_31(png_const_structrp png_ptr, png_const_bytep buf)
 {
@@ -422,9 +443,7 @@ png_inflate_claim(png_structrp png_ptr, png_uint_32 owner)
             png_ptr->flags |= PNG_FLAG_ZSTREAM_INITIALIZED;
       }
 
-#if ZLIB_VERNUM >= 0x1290 && \
-   defined(PNG_SET_OPTION_SUPPORTED) && defined(PNG_IGNORE_ADLER32) && \
-   !(defined(MAC_OS_X_VERSION_MIN_REQUIRED) && MAC_OS_X_VERSION_MIN_REQUIRED < 101300)
+#if PNG_USE_ZLIB_INFLATE_VALIDATE
       if (((png_ptr->options >> PNG_IGNORE_ADLER32) & 3) == PNG_OPTION_ON)
          /* Turn off validation of the ADLER32 checksum in IDAT chunks */
          ret = inflateValidate(&png_ptr->zstream, 0);
