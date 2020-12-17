@@ -24,6 +24,7 @@
      defined(PNG_SET_OPTION_SUPPORTED) && defined(PNG_IGNORE_ADLER32)
 #     if defined(__APPLE__) && defined(__MACH__)
          /* Determine whether inflateValidate is available by checking:
+          * - for static zlib linking (best, but flaky and unreliable detection)
           * - at run-time by OS version (best with sys zlib usage)
           * - at compile-time by minimal supported OS version
           */
@@ -37,7 +38,16 @@
           * since 1.0 (10.3 SDK).
           */
 #        include <AvailabilityMacros.h>
-#        if defined(__clang__) && __has_builtin(__builtin_available)
+#        ifdef inflateValidate
+            /* Without this (empty) check usage of inflateValidate is driven
+             * only by OS version while zlib with inflateValidate could be
+             * linked statically.
+             * If the system's zlib is being used inflateValidate is not a
+             * macro so by checking if inflateValidate is a macro the cases
+             * where zlib is compiled with a prefix are at least handled and
+             * inflateValidate can then be used regardless of OS version.
+             */
+#        elif defined(__clang__) && __has_builtin(__builtin_available)
             /* Check at run-time for availability by OS version. */
 #           define PNG_USE_ZLIB_INFLATE_VALIDATE 2
 #        elif defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
@@ -52,7 +62,7 @@
                /* Don't use if targeting pre-macOS 10.13. */
 #              define PNG_USE_ZLIB_INFLATE_VALIDATE 0
 #           endif
-#        endif
+#        endif /* inflateValidate */
 #     endif /* __APPLE__ && __MACH__ */
 #  else
 #     define PNG_USE_ZLIB_INFLATE_VALIDATE 0
