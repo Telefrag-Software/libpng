@@ -27,16 +27,27 @@
           * minimal supported OS version.
           */
 
-         /* For MAC_OS_X_VERSION_MIN_REQUIRED.
+         /* For TARGET_OS_IPHONE / TARGET_OS_MAC */
+#        include <TargetConditionals.h>
+
+         /* For IPHONE_OS_VERSION_MIN_REQUIRED / MAC_OS_X_VERSION_MIN_REQUIRED.
           * Not using the preferred <Availability.h> because it was introduced
           * during the 10.5 SDK while this header has been available with Xcode
           * since 1.0 (10.3 SDK).
           */
 #        include <AvailabilityMacros.h>
-#        if defined(MAC_OS_X_VERSION_MIN_REQUIRED) && \
-           MAC_OS_X_VERSION_MIN_REQUIRED < 101300
-            /* Don't use if targeting pre-macOS 10.13. */
-#           define PNG_USE_ZLIB_INFLATE_VALIDATE 0
+#        if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+#           if defined(IPHONE_OS_VERSION_MIN_REQUIRED) && \
+              IPHONE_OS_VERSION_MIN_REQUIRED < 110000
+               /* Don't use if targeting pre-iOS 11.0. */
+#              define PNG_USE_ZLIB_INFLATE_VALIDATE 0
+#           endif
+#        elif defined(TARGET_OS_MAC) && TARGET_OS_MAC
+#           if defined(MAC_OS_X_VERSION_MIN_REQUIRED) && \
+              MAC_OS_X_VERSION_MIN_REQUIRED < 101300
+               /* Don't use if targeting pre-macOS 10.13. */
+#              define PNG_USE_ZLIB_INFLATE_VALIDATE 0
+#           endif
 #        endif
 #     endif /* __APPLE__ && __MACH__ */
 #  else
